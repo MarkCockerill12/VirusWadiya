@@ -1,12 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+using namespace std;
 
 /*sample https://stackoverflow.com/questions/13030311/read-a-textfile-for-login-authentication-using-a-delimiter-of*/
 
 
 bool authenticate(const std::string &username, const std::string &password) {
-    std::ifstream file("password.txt");
+    std::ifstream file("authdata.txt");
     std::string fusername, fpassword;
 
     while (file) {
@@ -23,14 +24,29 @@ bool authenticate(const std::string &username, const std::string &password) {
 
 int main() {
   bool auth = true; //IMPLEMENT THIS INTO OTHER CODE
+  string username, password;
  
-  if (auth) authenticated("user");
-  else rejected("user");
+//   if (auth) authenticated("user");
+//   else rejected("user");
 
 
-    std::string username, password;
-    std::cin >> username >> password;
-    return (int)authenticate(username, password);
+
+    cout << "Enter username: " << endl;
+    cin >> username;
+    cout << "Enter password: " << endl;
+    cin >> password;
+
+    if (authenticate(username, password)) {
+        cout << "Successfully logged in";
+    } else {
+        cout << "Wrong username or password";
+    }
+
+    cout << "Hello World"; // prints Hello World
+
+    return 0;
 
 }
 
+
+    
