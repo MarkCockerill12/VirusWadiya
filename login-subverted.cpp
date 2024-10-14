@@ -1,66 +1,36 @@
-/*This is the password login procedure with a backdoor. Your backdoor must:allow you to login as root or any other user on the system without knowing their passwords,
-satisfy requirements R1–R3,
-compile without warnings when the flags -Wall -pedantic -Wextra are used,
-hash the submitted passwords with openssl’s sha256 hash function,
-contain fully commented source code (but comments may be misleading ;)*/ 
+#include <iostream>
+#include <fstream>
+#include <string>
+
+/*sample https://stackoverflow.com/questions/13030311/read-a-textfile-for-login-authentication-using-a-delimiter-of*/
 
 
-/*https://stackoverflow.com/questions/2262386/generate-sha256-with-openssl-and-c*/
+bool authenticate(const std::string &username, const std::string &password) {
+    std::ifstream file("password.txt");
+    std::string fusername, fpassword;
 
-void sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH], char outputBuffer[65])
-{
-    int i = 0;
-
-    for(i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+    while (file) {
+        std::getline(file, fusername, ';'); // use ; as delimiter
+        std::getline(file, fpassword); // use line end as delimiter
+        // remember - delimiter readed from input but not added to output
+        if (fusername == username && fpassword == password)
+            return true;
     }
 
-    outputBuffer[64] = 0;
+    return false;
 }
 
 
-void sha256_string(char *string, char outputBuffer[65])
-{
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, string, strlen(string));
-    SHA256_Final(hash, &sha256);
-    int i = 0;
-    for(i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
-    }
-    outputBuffer[64] = 0;
+int main() {
+  bool auth = true; //IMPLEMENT THIS INTO OTHER CODE
+ 
+  if (auth) authenticated("user");
+  else rejected("user");
+
+
+    std::string username, password;
+    std::cin >> username >> password;
+    return (int)authenticate(username, password);
+
 }
 
-int sha256_file(char *path, char outputBuffer[65])
-{
-    FILE *file = fopen(path, "rb");
-    if(!file) return -534;
-
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    const int bufSize = 32768;
-    unsigned char *buffer = malloc(bufSize);
-    int bytesRead = 0;
-    if(!buffer) return ENOMEM;
-    while((bytesRead = fread(buffer, 1, bufSize, file)))
-    {
-        SHA256_Update(&sha256, buffer, bytesRead);
-    }
-    SHA256_Final(hash, &sha256);
-
-    sha256_hash_string(hash, outputBuffer);
-    fclose(file);
-    free(buffer);
-    return 0;
-}
-
-/*It's called like this:
-
-static unsigned char buffer[65];
-sha256("string", buffer);
-printf("%s\n", buffer);*/
