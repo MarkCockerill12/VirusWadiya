@@ -10,7 +10,7 @@
 
 using namespace std;
 
-//USE THIS WHILE COMPILING g++ -o login login.cpp sha256.cpp -lssl -lcrypto -IC:\ProgramFiles\OpenSSL-Win64\include -LC:\ProgramFiles\OpenSSL-Win64\include\OpenSSL-Win64\lib
+//USE THIS WHILE COMPILING g++ -o login login.cpp sha256.cpp -lssl -lcrypto -IC:\ProgramFiles\OpenSSL-Win64\include -LC:\ProgramFiles\OpenSSL-Win64\
 //opensll needs to be installed in the system
 
 bool authenticate(const std::string &username, const std::string &password) {
