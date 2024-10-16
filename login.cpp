@@ -11,7 +11,7 @@
 
 using namespace std;
 
-//USE THIS WHILE COMPILING g++ -o login login.cpp sha256.cpp -lssl -lcrypto -IC:\ProgramFiles\OpenSSL-Win64\include -LC:\ProgramFiles\OpenSSL-Win64
+//USE THIS WHILE COMPILING g++ -o login login.cpp sha256.cpp authlib.cpp -lssl -lcrypto -IC:\ProgramFiles\OpenSSL-Win64\include -LC:\ProgramFiles\OpenSSL-Win64
 //opensll needs to be installed in the system
 
 // Your secure and subverted login procedures must both satisfy the following requirements: 
