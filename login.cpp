@@ -5,7 +5,7 @@
 #include "authlib.h"
 #include <openssl/sha.h>
 
-std::string sha256(const std::string& value) {
+std::string sha256(const std::string& value) { //function to hash the password
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -23,11 +23,11 @@ std::string sha256(const std::string& value) {
 
 int main() {
     // Reading passwords from file
-    std::unordered_map<std::string, std::string> credentials;
-    std::ifstream passwordFile("passwords.txt");
+    std::unordered_map<std::string, std::string> credentials; // create map to store the username and hashed password
+    std::ifstream passwordFile("passwords.txt"); //file to read in from
     std::string currentLine;
-    while (std::getline(passwordFile, currentLine)) {
-        size_t colonPos = currentLine.find(':');
+    while (std::getline(passwordFile, currentLine)) { //read in from file line by line
+        size_t colonPos = currentLine.find(':'); //use : as delimiter
         if (colonPos != std::string::npos) {
             credentials[currentLine.substr(0, colonPos)] = currentLine.substr(colonPos + 1);
         }
