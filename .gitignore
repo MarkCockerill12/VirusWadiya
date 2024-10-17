@@ -1,4 +1,8 @@
-/.vscode/
+.vscode/
+.DS_Store
+login-subverted-old.cpp
+makefile-current1
+makefile-original
 /.exe
 /a.exe
 /login.exe
