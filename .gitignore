@@ -3,4 +3,6 @@
 login-subverted-old.cpp
 makefile-current1
 makefile-original
-
+*.out
+*.o
+*

