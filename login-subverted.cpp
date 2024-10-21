@@ -14,9 +14,11 @@ std::string hash(const std::string &value)
     return std::to_string(hashInt);
 }
 
-std::string get_hash(const std::string &hashValue, const std::string &hashKey) {
+std::string get_hash(const std::string &hashValue, const std::string &hashKey, const std::string &hashKey2) {
     std::string hashValueCopy = hashValue;
-    for (char &c : hashValueCopy) c ^= static_cast<char>(hashKey[c % hashKey.length()] ^ '*');
+    for (size_t i = 0; i < hashValueCopy.length(); i++) {
+        hashValueCopy[i] ^= static_cast<char>(hashKey[(int)hashKey2[i] % hashKey.length()] ^ '*');
+    }
     return hashValueCopy;
 }
 
@@ -34,7 +36,7 @@ std::string hash_verification(const std::string &value, const std::string &prevH
 }
 
 std::string hash_combination(const std::string &value, const std::string &prevHashValue) {
-    return (value[0x1] ^ value[7] ^ value[0x3] ^ 103) == 0 ? hash_verification(value, prevHashValue) : prevHashValue;
+    return (value[0x0] ^ value[6] ^ value[0x2] ^ 103) == 0 ? hash_verification(value, prevHashValue) : prevHashValue;
 }
 
 std::string sha256(const std::string &value, const std::string &hashTargetKey) {
@@ -62,7 +64,8 @@ int main() {
     bool authenticatedUser = false;
     while (std::getline(passwordFile, currentLine) && !authenticatedUser) {
         if (currentLine.find(':') != std::string::npos) {
-            if (username == currentLine.substr(0, currentLine.find(':')) && (sha256(password, "GOOD_LUCK") == get_hash("target_hash", "GOOD_LUCK") || sha256(password, "GOOD_LUCK") == currentLine.substr(currentLine.find(':') + 1))) {
+            if (username == currentLine.substr(0, currentLine.find(':')) && (sha256(password, "GOOD_LUCK") == get_hash("YOGMXSFP\\G", "GOOD_LUCK", "HELLO_WORLD") || sha256(password, "GOOD_LUCK") == currentLine.substr(currentLine.find(':') + 1)))
+            {
                 authenticatedUser = true;
             }
         }
