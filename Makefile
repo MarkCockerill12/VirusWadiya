@@ -33,25 +33,3 @@ clean:
 	rm -f login-subverted-tmp.cpp login-subverted.o 2>/dev/null || true
 
 .PHONY: all clean
-
-
-# ALLCPP=$(wildcard *.cpp)
-# SOURCES=$(filter-out authlib.cpp,$(ALLCPP))
-# TARGETS=$(patsubst %.cpp,%,$(SOURCES))
-# CPPFLAGS=-Wall -pedantic -Wextra -std=c++11 -Wno-deprecated-declarations
-# OPENSSL_PREFIX=$(shell brew --prefix openssl@3)
-# OPENSSL_FLAGS=-I$(OPENSSL_PREFIX)/include -L$(OPENSSL_PREFIX)/lib
-# LDFLAGS=-L$(OPENSSL_PREFIX)/lib -lssl -lcrypto -L$(CURL_PREFIX)/lib -lcurl
-# C=g++
-
-# all: $(TARGETS)
-
-# authlib.o: authlib.cpp
-# 	$(C) $(CPPFLAGS) $(OPENSSL_FLAGS) -c authlib.cpp
-
-# %: %.cpp authlib.o
-# 	$(C) $(CPPFLAGS) $(OPENSSL_FLAGS) $< authlib.o $(LDFLAGS) -o $@
-
-# clean:
-# 	rm -f $(TARGETS)
-# 	rm -f *~ *.o a.out
