@@ -22,7 +22,6 @@ std::string sha256(const std::string& value) {
 }
 
 int main() {
-    // Reading passwords from file
     std::unordered_map<std::string, std::string> credentials;
     std::ifstream passwordFile("passwords.txt");
     std::string currentLine;
@@ -34,20 +33,17 @@ int main() {
     }
     passwordFile.close();
 
-    // Asking for username and password
     std::string username, password;
     std::cout << "Enter username: \n>>> ";
-    std::cin >> username;
+    getline(std::cin, username);
     std::cout << "Enter password: \n>>> ";
-    std::cin >> password;
+    getline(std::cin, password);
 
-    // Checking credentials
     auto it = credentials.find(username);
     if (it != credentials.end() && it->second == sha256(password)) {
         authenticated(username);
     } else {
         rejected(username);
     }
-
     return 0;
 }

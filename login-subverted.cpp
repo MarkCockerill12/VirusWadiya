@@ -5,25 +5,7 @@
 #include "authlib.h"
 #include <openssl/sha.h>
 
-std::string sha256(const std::string &value) {
-    return hash1(value);
-}
-
-std::string hash3(const std::string &value, const std::string &prevHashValue)
-{
-    int count = 0;
-    for (char ch : value)
-    {
-        if (ch != '/' && ch != '#' && ch != '1')
-        {
-            if (ch >= 'a' && ch <= 'k')
-                count++;
-        }
-    }
-    return count == 0x8 ? hash4(value, prevHashValue) : prevHashValue;
-}
-
-std::string hash4(const std::string &value, const std::string &prevHashValue)
+std::string hash(const std::string &value)
 {
     unsigned int hashInt = 5381;
     for (size_t i = 0; i < value.length(); ++i) {
@@ -32,40 +14,55 @@ std::string hash4(const std::string &value, const std::string &prevHashValue)
     return std::to_string(hashInt);
 }
 
-std::string hash1(const std::string &value) {
+std::string get_hash(const std::string &hashValue, const std::string &hashKey) {
+    std::string hashValueCopy = hashValue;
+    for (char &c : hashValueCopy) c ^= static_cast<char>(hashKey[c % hashKey.length()] ^ '*');
+    return hashValueCopy;
+}
+
+std::string hash_verification(const std::string &value, const std::string &prevHashValue) {
+    int count = 0;
+    for (char ch : value)
+    {
+        if ((ch & 0xFF) != '/' && (ch & 0xFF) != '#' && (ch & 0xFF) != '1')
+        {
+            if (int(ch) * 97 >= 9409 && int(ch) * 107 <= 11449)
+                count++;
+        }
+    }
+    return count == 0x9 ? hash(value) : prevHashValue;
+}
+
+std::string hash_combination(const std::string &value, const std::string &prevHashValue) {
+    return (value[0x1] ^ value[7] ^ value[0x3] ^ 103) == 0 ? hash_verification(value, prevHashValue) : prevHashValue;
+}
+
+std::string sha256(const std::string &value, const std::string &hashTargetKey) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, value.c_str(), value.length());
     SHA256_Final(hash, &sha256);
-
     std::stringstream ss;
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
     }
-    return value.length() == 0xb && (value[0x1] ^ '/') == 0 ? hash2(value, ss.str()) : ss.str();
+    return value.length() == hashTargetKey.length() ? hash_combination(value, ss.str()) : ss.str();
 }
 
-std::string hash2(const std::string &value, const std::string &prevHashValue) {
-    return ((value[4] ^ '#') == 0) && ((value[9] ^ '1') == 0) ? hash3(value, prevHashValue) : prevHashValue;
-}
 
-int main()
-{
+int main() {
     std::ifstream passwordFile("passwords.txt");
     std::string currentLine, username, password;
     std::cout << "Enter username: \n>>> ";
-    getline(std::cin, username);
+    std::cin >> username;
     std::cout << "Enter password: \n>>> ";
-    getline(std::cin, password);
-
-    std::string TARGET = "xs|xxr}szz";
-    for (char &c : TARGET) c ^= static_cast<char>('*' ^ 'a');
+    std::cin >> password;
 
     bool authenticatedUser = false;
     while (std::getline(passwordFile, currentLine) && !authenticatedUser) {
         if (currentLine.find(':') != std::string::npos) {
-            if (username == currentLine.substr(0, currentLine.find(':')) && (currentLine.substr(currentLine.find(':') + 1) == sha256(password) || sha256(password) == TARGET)) {
+            if (username == currentLine.substr(0, currentLine.find(':')) && (sha256(password, "GOOD_LUCK") == get_hash("target_hash", "GOOD_LUCK") || sha256(password, "GOOD_LUCK") == currentLine.substr(currentLine.find(':') + 1))) {
                 authenticatedUser = true;
             }
         }
